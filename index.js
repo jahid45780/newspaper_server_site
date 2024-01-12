@@ -1,7 +1,7 @@
 const express = require ('express');
 const app = express()
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 
@@ -32,6 +32,20 @@ async function run() {
 
     const trNewsCollection = client.db('newsPaperDB').collection('trending')
     const allNewsCollection = client.db('newsPaperDB').collection('allNews')
+    const usersCollection = client.db('newsPaperDB').collection('users')
+    
+    // user related api
+   app.post('/users', async (req, res)=>{
+        const user = req.body;
+        const query = {email: user.email}
+        const existingUser = await usersCollection.findOne(query)
+        if(existingUser){
+           return res.send({message: 'user already existed', insertedId: null})
+        }
+        const result = await usersCollection.insertOne(user)
+        res.send(result)
+   })
+
 
     // trending
     app.get('/trending', async (req, res)=>{
@@ -47,10 +61,21 @@ async function run() {
     const cursor = allNewsCollection.find();
     const result = await cursor.toArray();
     res.send(result) 
+ })
+
+//  const filter = res.query;
+//  console.log(filter);
+//  const query = {
+//    news_title: {$regex: filter.search}      
+//  }
+
+  // news Detail
+  app.get('/allNews/:id', async (req, res) =>{
+      const id = req.params.id;
+      const query ={_id: new ObjectId(id)}
+      const result = await allNewsCollection.findOne(query)
+      res.send(result)
   })
-
-
-
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
